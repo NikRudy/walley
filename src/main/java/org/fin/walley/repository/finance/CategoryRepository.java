@@ -2,8 +2,11 @@ package org.fin.walley.repository.finance;
 
 
 import org.fin.walley.domain.finance.Category;
+import org.fin.walley.domain.finance.TransactionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 
 /**
@@ -11,6 +14,16 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-// Методы поиска активных категорий и по типу операции
-// будут добавлены на следующем подэтапе.
+    /**
+     * Все активные категории (active = true).
+     * Используется при построении справочников и форм.
+     */
+    List<Category> findByActiveTrue();
+
+
+    /**
+     * Активные категории, отфильтрованные по типу операции
+     * (доход/расход). Например, все категории расходов.
+     */
+    List<Category> findByTypeAndActiveTrue(TransactionType type);
 }
