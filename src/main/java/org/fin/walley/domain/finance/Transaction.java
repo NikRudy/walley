@@ -1,8 +1,5 @@
 package org.fin.walley.domain.finance;
 
-package org.fin.walley.domain.finance;
-
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.fin.walley.domain.common.AbstractAuditableEntity;
