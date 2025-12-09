@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Register - Walley</title>
+</head>
+<body>
+<h1>Регистрация</h1>
+
+<form th:action="@{/register}" th:object="${form}" method="post">
+    <!-- CSRF-токен -->
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+    <label>
+        Логин:
+        <input type="text" th:field="*{username}"/>
+    </label>
+    <br/>
+
+    <label>
+        Email:
+        <input type="email" th:field="*{email}"/>
+    </label>
+    <br/>
+
+    <label>
+        Пароль:
+        <input type="password" th:field="*{password}"/>
+    </label>
+    <br/>
+
+    <button type="submit">Зарегистрироваться</button>
+</form>
+
+</body>
+</html>

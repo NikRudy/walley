@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard - Walley</title>
+</head>
+<body>
+<h1>Личный кабинет Walley</h1>
+<p>Здесь в будущем будут счета, транзакции и отчёты.</p>
+
+<a th:href="@{/logout}" onclick="event.preventDefault(); this.closest('form').submit();">Выйти</a>
+<form th:action="@{/logout}" method="post" style="display:none;">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+</form>
+
+</body>
+</html>
