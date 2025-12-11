@@ -1,6 +1,7 @@
 package org.fin.walley.dto.importexport;
 
 
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +14,10 @@ import java.util.List;
 /**
  * DTO результата операции импорта.
  * <p>
- * Позволяет фронтенду/клиенту понять, сколько записей
- * было успешно импортировано, сколько — с ошибками,
- * и какие ошибки возникли.
+ * Обычно используется только как ответ (outbound), но
+ * аннотации @PositiveOrZero здесь задают базовые инварианты,
+ * которые могут проверяться в тестах или при внутренней
+ * валидации.
  */
 @Data
 @NoArgsConstructor
@@ -24,18 +26,17 @@ import java.util.List;
 public class ImportResultDto {
 
 
+    @PositiveOrZero(message = "{validation.import.totalRecords.positiveOrZero}")
     private int totalRecords;
 
 
+    @PositiveOrZero(message = "{validation.import.successCount.positiveOrZero}")
     private int successCount;
 
 
+    @PositiveOrZero(message = "{validation.import.failedCount.positiveOrZero}")
     private int failedCount;
 
 
-    /**
-     * Человеко-читаемые сообщения об ошибках (например,
-     * "Строка 5: некорректный формат суммы" и т.п.).
-     */
     private List<String> errorMessages;
 }

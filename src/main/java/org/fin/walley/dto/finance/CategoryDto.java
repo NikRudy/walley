@@ -1,6 +1,9 @@
-ackage org.fin.walley.dto.finance;
+package org.fin.walley.dto.finance;
 
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,17 +24,14 @@ public class CategoryDto {
     private Long id;
 
 
+    @NotBlank(message = "{validation.category.name.notBlank}")
+    @Size(min = 2, max = 100, message = "{validation.category.name.size}")
     private String name;
 
 
-    /**
-     * Тип операции, к которой относится категория (доход/расход).
-     */
+    @NotNull(message = "{validation.category.type.notNull}")
     private TransactionType type;
 
 
-    /**
-     * Признак, что категория доступна для выбора новых транзакций.
-     */
     private boolean active;
 }

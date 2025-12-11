@@ -1,6 +1,7 @@
 package org.fin.walley.dto.importexport;
 
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +14,6 @@ import java.time.LocalDate;
 
 /**
  * DTO запроса на экспорт данных.
- * <p>
- * Позволяет задать формат (JSON/CSV) и базовые фильтры
- * по периоду и счёту/типу для формирования выгрузки.
  */
 @Data
 @NoArgsConstructor
@@ -24,32 +22,26 @@ import java.time.LocalDate;
 public class ExportRequestDto {
 
 
-    /**
-     * Формат выгрузки (JSON или CSV).
-     */
+    @NotNull(message = "{validation.export.format.notNull}")
     private JobFormat format;
 
 
     /**
-     * Начало периода (включительно).
+     * Период может быть обязательным для UI (например, экспорт только
+     * за указанный интервал) – в таком случае обе даты помечаем
+     * @NotNull и дополнительно проверяем, что dateFrom <= dateTo
+     * на уровне бизнес-логики или через class-level валидатор.
      */
+    @NotNull(message = "{validation.export.dateFrom.notNull}")
     private LocalDate dateFrom;
 
 
-    /**
-     * Конец периода (включительно).
-     */
+    @NotNull(message = "{validation.export.dateTo.notNull}")
     private LocalDate dateTo;
 
 
-    /**
-     * Опциональный фильтр по счёту.
-     */
     private Long accountId;
 
 
-    /**
-     * Признак включения логически удалённых транзакций в выгрузку.
-     */
     private boolean includeDeleted;
 }

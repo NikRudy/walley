@@ -1,6 +1,9 @@
 package org.fin.walley.dto.finance;
 
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,17 +23,18 @@ public class SubcategoryDto {
     private Long id;
 
 
+    @NotBlank(message = "{validation.subcategory.name.notBlank}")
+    @Size(min = 2, max = 100, message = "{validation.subcategory.name.size}")
     private String name;
 
 
-    /**
-     * Идентификатор родительской категории.
-     */
+    @NotNull(message = "{validation.subcategory.categoryId.notNull}")
     private Long categoryId;
 
 
     /**
-     * Имя родительской категории (для удобства отображения в UI).
+     * categoryName используется только для отображения, поэтому
+     * как правило не валидируется на уровне DTO.
      */
     private String categoryName;
 

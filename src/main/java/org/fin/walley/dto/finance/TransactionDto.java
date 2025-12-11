@@ -1,5 +1,9 @@
+package org.fin.walley.dto.finance;
 
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +17,6 @@ import java.time.LocalDateTime;
 
 /**
  * DTO финансовой транзакции.
- * <p>
- * Представляет данные, необходимые для отображения и
- * создания/редактирования операций в UI или через REST.
  */
 @Data
 @NoArgsConstructor
@@ -28,42 +29,41 @@ public class TransactionDto {
 
 
     /**
-     * Идентификатор пользователя-владельца транзакции.
-     * Обычно не заполняется с UI напрямую, а подставляется
-     * на уровне сервисного слоя из текущего контекста безопасности.
+     * userId, как правило, не приходит с UI, а подставляется
+     * сервисом из контекста безопасности, поэтому здесь не
+     * валидируется.
      */
     private Long userId;
 
 
+    @NotNull(message = "{validation.transaction.accountId.notNull}")
     private Long accountId;
 
 
+    @NotNull(message = "{validation.transaction.categoryId.notNull}")
     private Long categoryId;
 
 
+    // subcategoryId может быть null, если транзакция привязана только к категории.
     private Long subcategoryId;
 
 
+    @NotNull(message = "{validation.transaction.amount.notNull}")
+    @Positive(message = "{validation.transaction.amount.positive}")
     private BigDecimal amount;
 
 
+    @NotNull(message = "{validation.transaction.type.notNull}")
     private TransactionType type;
 
 
-    /**
-     * Момент совершения операции.
-     */
+    @NotNull(message = "{validation.transaction.occurredAt.notNull}")
     private LocalDateTime occurredAt;
 
 
-    /**
-     * Произвольный комментарий пользователя.
-     */
+    @Size(max = 500, message = "{validation.transaction.description.size}")
     private String description;
 
 
-    /**
-     * Флаг логического удаления (для soft delete сценариев).
-     */
     private boolean deleted;
 }
