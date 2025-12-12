@@ -3,55 +3,48 @@ package org.fin.walley.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 
 import java.util.Set;
 
 
 /**
- * DTO для отображения и редактирования данных пользователя
- * в админке и "личном кабинете".
- * <p>
- * id здесь не валидируется как @NotNull, так как может
- * отсутствовать при создании нового пользователя.
+ * DTO-представление пользователя для профиля и административного интерфейса.
+ * Здесь валидация минимальна, т.к. часть проверок (уникальность email/логина)
+ * выполняется на бизнес-уровне в сервисах.
  */
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class UserDto {
 
 
+    @NotNull(message = "{user.id.not-null}")
     private Long id;
 
 
-    @NotBlank(message = "{validation.user.username.notBlank}")
-    @Size(min = 3, max = 50, message = "{validation.user.username.size}")
+    @NotBlank(message = "{user.username.not-blank}")
+    @Size(min = 3, max = 50, message = "{user.username.size}")
     private String username;
 
 
-    @NotBlank(message = "{validation.user.email.notBlank}")
-    @Email(message = "{validation.user.email.format}")
-    @Size(max = 100, message = "{validation.user.email.size}")
+    @NotBlank(message = "{user.email.not-blank}")
+    @Email(message = "{user.email.invalid}")
     private String email;
 
 
-    /**
-     * Признак активного пользователя.
-     */
     private boolean enabled;
 
 
     /**
-     * Набор ролей пользователя (например, ROLE_USER, ROLE_ADMIN).
-     * На уровне DTO достаточно проверять, что коллекция не пуста,
-     * более сложные правила (например, наличие как минимум ROLE_USER)
-     * относятся к бизнес-логике.
+     * Набор имён ролей (например, ROLE_USER, ROLE_ADMIN).
+     * Здесь валидация будет чаще проверяться на бизнес-уровне
+     * (например, что хотя бы одна роль присутствует).
      */
-    private Set<String> roles;
+    private java.util.Set<String> roles;
 }

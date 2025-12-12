@@ -7,19 +7,18 @@ import org.fin.walley.dto.importexport.ExportRequestDto;
 /**
  * Сервис экспорта финансовых данных пользователя.
  */
-public interface ExportService {
 
+interface ExportService {
 
     /**
-     * Формирование выгрузки транзакций пользователя в виде массива байт,
-     * который затем может быть отдан как файл (JSON/CSV) через контроллер.
+     * Экспорт транзакций пользователя в соответствии с параметрами запроса.
+     * Возвращает байтовый массив с содержимым файла.
      */
     byte[] exportTransactions(Long userId, ExportRequestDto requestDto);
 
-
     /**
-     * Формирование рекомендованного имени файла для выгрузки (например,
-     * walley-transactions-2025-01-01_2025-01-31.csv).
+     * Построение имени файла для экспорта (для заголовков Content-Disposition
+     * или сохранения на диск).
      */
     String buildExportFileName(Long userId, ExportRequestDto requestDto);
 }

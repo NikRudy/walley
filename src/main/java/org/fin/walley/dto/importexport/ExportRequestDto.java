@@ -2,10 +2,7 @@ package org.fin.walley.dto.importexport;
 
 
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.fin.walley.domain.audit.JobFormat;
 
 
@@ -13,35 +10,45 @@ import java.time.LocalDate;
 
 
 /**
- * DTO запроса на экспорт данных.
+ * Параметры запроса на экспорт транзакций.
+ * dateFrom/dateTo и accountId могут быть null (фильтры опциональны),
+ * а вот формат выгрузки обязателен.
  */
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ExportRequestDto {
 
 
-    @NotNull(message = "{validation.export.format.notNull}")
+    /**
+     * Начало периода (включительно). Может быть null.
+     */
+    private LocalDate dateFrom;
+
+
+    /**
+     * Конец периода (включительно). Может быть null.
+     */
+    private LocalDate dateTo;
+
+
+    /**
+     * Ограничение по счёту. Если null – все счета пользователя.
+     */
+    private Long accountId;
+
+
+    /**
+     * Формат выгрузки (JSON или CSV).
+     */
+    @NotNull(message = "{export.format.not-null}")
     private JobFormat format;
 
 
     /**
-     * Период может быть обязательным для UI (например, экспорт только
-     * за указанный интервал) – в таком случае обе даты помечаем
-     * @NotNull и дополнительно проверяем, что dateFrom <= dateTo
-     * на уровне бизнес-логики или через class-level валидатор.
+     * Флаг включения логически удалённых транзакций в выгрузку.
      */
-    @NotNull(message = "{validation.export.dateFrom.notNull}")
-    private LocalDate dateFrom;
-
-
-    @NotNull(message = "{validation.export.dateTo.notNull}")
-    private LocalDate dateTo;
-
-
-    private Long accountId;
-
-
     private boolean includeDeleted;
 }

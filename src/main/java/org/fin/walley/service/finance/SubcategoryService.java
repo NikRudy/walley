@@ -1,7 +1,5 @@
 package org.fin.walley.service.finance;
 
-package org.fin.walley.service.finance;
-
 
 import org.fin.walley.dto.finance.SubcategoryDto;
 
@@ -11,37 +9,48 @@ import java.util.Optional;
 
 
 /**
- * Сервис управления подкатегориями.
+ * Сервис для управления подкатегориями.
  */
-public interface SubcategoryService {
-
-
-    SubcategoryDto createSubcategory(Long userId, SubcategoryDto subcategoryDto);
-
-
-    SubcategoryDto updateSubcategory(Long userId, Long subcategoryId, SubcategoryDto subcategoryDto);
-
-
-    void deactivateSubcategory(Long userId, Long subcategoryId);
-
-
-    void activateSubcategory(Long userId, Long subcategoryId);
-
-
-    void deleteSubcategory(Long userId, Long subcategoryId);
-
-
-    Optional<SubcategoryDto> getSubcategoryById(Long userId, Long subcategoryId);
-
+interface SubcategoryService {
 
     /**
-     * Список подкатегорий для указанной категории.
+     * Создание новой подкатегории.
      */
-    List<SubcategoryDto> getSubcategoriesByCategory(Long userId, Long categoryId, boolean onlyActive);
-
+    SubcategoryDto createSubcategory(SubcategoryDto subcategoryDto);
 
     /**
-     * Все подкатегории пользователя.
+     * Обновление подкатегории.
      */
-    List<SubcategoryDto> getAllSubcategories(Long userId);
+    SubcategoryDto updateSubcategory(Long subcategoryId, SubcategoryDto subcategoryDto);
+
+    /**
+     * Деактивация подкатегории.
+     */
+    void deactivateSubcategory(Long subcategoryId);
+
+    /**
+     * Активация подкатегории.
+     */
+    void activateSubcategory(Long subcategoryId);
+
+    /**
+     * Удаление подкатегории с проверкой отсутствия связанных транзакций.
+     */
+    void deleteSubcategory(Long subcategoryId);
+
+    /**
+     * Получение подкатегории по идентификатору.
+     */
+    Optional<SubcategoryDto> getSubcategoryById(Long subcategoryId);
+
+    /**
+     * Получение подкатегорий по идентификатору категории. При onlyActive=true
+     * возвращаются только активные подкатегории.
+     */
+    List<SubcategoryDto> getSubcategoriesByCategory(Long categoryId, boolean onlyActive);
+
+    /**
+     * Получение всех подкатегорий. При onlyActive=true – только активные.
+     */
+    List<SubcategoryDto> getAllSubcategories(boolean onlyActive);
 }

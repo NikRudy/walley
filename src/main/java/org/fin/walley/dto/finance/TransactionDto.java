@@ -6,8 +6,9 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.fin.walley.domain.finance.TransactionType;
 
 
@@ -16,9 +17,12 @@ import java.time.LocalDateTime;
 
 
 /**
- * DTO финансовой транзакции.
+ * DTO для транзакции (доход/расход).
+ * Здесь валидация гарантирует корректность формы (UI-уровень),
+ * а принадлежность счёта/категории пользователю проверяется в сервисах.
  */
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -29,41 +33,47 @@ public class TransactionDto {
 
 
     /**
-     * userId, как правило, не приходит с UI, а подставляется
-     * сервисом из контекста безопасности, поэтому здесь не
-     * валидируется.
+     * Владелец транзакции. Обычно определяется из контекста безопасности,
+     * поэтому не помечаем как @NotNull, чтобы DTO было универсальным
+     * (к примеру, в админских сценариях).
      */
     private Long userId;
 
 
-    @NotNull(message = "{validation.transaction.accountId.notNull}")
+    @NotNull(message = "{transaction.accountId.not-null}")
     private Long accountId;
 
 
-    @NotNull(message = "{validation.transaction.categoryId.notNull}")
+    @NotNull(message = "{transaction.categoryId.not-null}")
     private Long categoryId;
 
 
-    // subcategoryId может быть null, если транзакция привязана только к категории.
+    /**
+     * Подкатегория может быть необязательной, поэтому без @NotNull.
+     */
     private Long subcategoryId;
 
 
-    @NotNull(message = "{validation.transaction.amount.notNull}")
-    @Positive(message = "{validation.transaction.amount.positive}")
+    @NotNull(message = "{transaction.amount.not-null}")
+    @Positive(message = "{transaction.amount.positive}")
     private BigDecimal amount;
 
 
-    @NotNull(message = "{validation.transaction.type.notNull}")
+    @NotNull(message = "{transaction.type.not-null}")
     private TransactionType type;
 
 
-    @NotNull(message = "{validation.transaction.occurredAt.notNull}")
+    @NotNull(message = "{transaction.occurredAt.not-null}")
     private LocalDateTime occurredAt;
 
 
-    @Size(max = 500, message = "{validation.transaction.description.size}")
+    @Size(max = 500, message = "{transaction.description.size}")
     private String description;
 
 
+    /**
+     * Флаг логического удаления – управляется бизнес-логикой,
+     * поэтому валидацией не ограничивается.
+     */
     private boolean deleted;
 }

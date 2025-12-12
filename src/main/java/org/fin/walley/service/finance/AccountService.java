@@ -11,48 +11,40 @@ import java.util.Optional;
 /**
  * Сервис для управления счетами пользователя.
  */
-public interface AccountService {
-
+interface AccountService {
 
     /**
      * Создание нового счёта для пользователя.
      */
     AccountDto createAccount(Long userId, AccountDto accountDto);
 
-
     /**
-     * Обновление существующего счёта.
+     * Обновление параметров счёта пользователя.
      */
     AccountDto updateAccount(Long userId, Long accountId, AccountDto accountDto);
 
-
     /**
-     * Перевод счёта в архив (деактивация).
+     * Архивация счёта (перевод в неактивное состояние).
      */
     void archiveAccount(Long userId, Long accountId);
 
-
     /**
-     * Удаление счёта (при отсутствии связанных транзакций либо
-     * с учётом бизнес-ограничений).
+     * Удаление счёта пользователя с контролем наличия транзакций.
      */
     void deleteAccount(Long userId, Long accountId);
 
-
     /**
-     * Получение счёта по идентификатору (с проверкой принадлежности пользователю).
+     * Получение счёта по идентификатору для конкретного пользователя.
      */
     Optional<AccountDto> getAccountById(Long userId, Long accountId);
 
-
     /**
-     * Получение всех активных счетов пользователя.
+     * Список активных счетов пользователя.
      */
     List<AccountDto> getActiveAccounts(Long userId);
 
-
     /**
-     * Получение всех счетов пользователя (включая архивные).
+     * Список всех счетов пользователя (активных и архивных).
      */
     List<AccountDto> getAllAccounts(Long userId);
 }

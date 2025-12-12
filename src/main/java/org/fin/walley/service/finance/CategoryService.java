@@ -12,44 +12,46 @@ import java.util.Optional;
 /**
  * Сервис управления категориями финансовых операций.
  */
-public interface CategoryService {
-
-
-    CategoryDto createCategory(Long userId, CategoryDto categoryDto);
-
-
-    CategoryDto updateCategory(Long userId, Long categoryId, CategoryDto categoryDto);
-
+interface CategoryService {
 
     /**
-     * Деактивация категории (перевод в неактивное состояние).
+     * Создание новой категории.
      */
-    void deactivateCategory(Long userId, Long categoryId);
-
+    CategoryDto createCategory(CategoryDto categoryDto);
 
     /**
-     * Активировать ранее деактивированную категорию.
+     * Обновление категории.
      */
-    void activateCategory(Long userId, Long categoryId);
-
+    CategoryDto updateCategory(Long categoryId, CategoryDto categoryDto);
 
     /**
-     * Удаление категории с учётом наличия связанных транзакций.
+     * Деактивация категории (active=false).
      */
-    void deleteCategory(Long userId, Long categoryId);
-
-
-    Optional<CategoryDto> getCategoryById(Long userId, Long categoryId);
-
+    void deactivateCategory(Long categoryId);
 
     /**
-     * Список категорий для пользователя по типу операции (INCOME/EXPENSE).
+     * Активация категории (active=true).
      */
-    List<CategoryDto> getCategoriesByType(Long userId, TransactionType type, boolean onlyActive);
-
+    void activateCategory(Long categoryId);
 
     /**
-     * Все категории пользователя.
+     * Удаление категории с проверкой отсутствия связанных транзакций.
      */
-    List<CategoryDto> getAllCategories(Long userId);
+    void deleteCategory(Long categoryId);
+
+    /**
+     * Получение категории по идентификатору.
+     */
+    Optional<CategoryDto> getCategoryById(Long categoryId);
+
+    /**
+     * Получение категорий по типу (доход/расход). При onlyActive=true
+     * возвращаются только активные категории.
+     */
+    List<CategoryDto> getCategoriesByType(TransactionType type, boolean onlyActive);
+
+    /**
+     * Получение всех категорий. При onlyActive=true – только активные.
+     */
+    List<CategoryDto> getAllCategories(boolean onlyActive);
 }

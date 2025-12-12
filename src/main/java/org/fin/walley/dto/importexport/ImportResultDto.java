@@ -1,42 +1,41 @@
 package org.fin.walley.dto.importexport;
 
 
-import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.fin.walley.domain.audit.JobFormat;
 
 
-import java.util.List;
+import java.time.LocalDate;
 
 
 /**
- * DTO результата операции импорта.
- * <p>
- * Обычно используется только как ответ (outbound), но
- * аннотации @PositiveOrZero здесь задают базовые инварианты,
- * которые могут проверяться в тестах или при внутренней
- * валидации.
+ * Результат импорта (агрегированные показатели).
+ * Это выходной DTO, поэтому аннотации валидации здесь не обязательны.
  */
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ImportResultDto {
 
 
-    @PositiveOrZero(message = "{validation.import.totalRecords.positiveOrZero}")
     private int totalRecords;
 
 
-    @PositiveOrZero(message = "{validation.import.successCount.positiveOrZero}")
     private int successCount;
 
 
-    @PositiveOrZero(message = "{validation.import.failedCount.positiveOrZero}")
     private int failedCount;
 
 
-    private List<String> errorMessages;
+    /**
+     * Опциональное текстовое описание ошибки/предупреждения.
+     */
+    private String message;
 }
