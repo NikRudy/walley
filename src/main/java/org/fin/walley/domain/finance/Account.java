@@ -5,18 +5,12 @@ import lombok.*;
 import org.fin.walley.domain.common.AbstractAuditableEntity;
 import org.fin.walley.domain.user.User;
 
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * Счёт пользователя (логический или физический: карта, наличные и т.п.).
- */
+import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "accounts",
-uniqueConstraints = {
-        @UniqueConstraint(name = "uq_accounts_user_name", columnNames = {"user_id","name"})
-})
+@Table(name = "accounts")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,24 +22,42 @@ public class Account extends AbstractAuditableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * Владелец счёта.
+     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    /**
+     * Название счёта (например, «Наличные», «Карта VISA»).
+     */
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "currency", nullable = false, length = 3)
-    @Builder.Default
-    private String currency = "PLN";
+    /**
+     * Опциональное описание счёта.
+     */
+    @Column(name = "description", length = 255)
+    private String description;
 
+    /**
+     * Текущий баланс счёта.
+     */
+    @Column(name = "current_balance", nullable = false, precision = 19, scale = 2)
+    private BigDecimal currentBalance = BigDecimal.ZERO;
+
+    /**
+     * Флаг активности (архив/активен).
+     */
     @Column(name = "active", nullable = false)
+    private boolean active = true;
+
+    /**
+     * Транзакции, привязанные к этому счёту.
+     * Обратная сторона связи Transaction.account.
+     */
+    @OneToMany(mappedBy = "account")
     @Builder.Default
-    private Boolean active = true;
-
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = false)
-    @Builder.Default
-    private List<Transaction> transactions = new ArrayList<>();
-
-
+    private Set<Transaction> transactions = new HashSet<>();
 }
