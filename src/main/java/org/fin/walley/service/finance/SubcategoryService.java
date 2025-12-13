@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * Сервис для управления подкатегориями.
  */
-interface SubcategoryService {
+public interface SubcategoryService {
 
     /**
      * Создание новой подкатегории.

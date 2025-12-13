@@ -1,0 +1,54 @@
+<!-- templates/accounts/list.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Accounts</title>
+</head>
+<body>
+<div th:replace="layout/main :: content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Accounts</h2>
+        <a class="btn btn-primary" th:href="@{/accounts/new}">Add account</a>
+    </div>
+
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th class="text-end">Current balance</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="acc : ${accounts}">
+            <td th:text="${acc.name}"></td>
+            <td th:text="${acc.description}"></td>
+            <td class="text-end" th:text="${acc.currentBalance}"></td>
+            <td>
+                <span th:if="${acc.active}" class="badge bg-success">Active</span>
+                <span th:unless="${acc.active}" class="badge bg-secondary">Archived</span>
+            </td>
+            <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary me-1" th:href="@{'/accounts/' + ${acc.id} + '/edit'}">Edit</a>
+                <form th:action="@{'/accounts/' + ${acc.id} + '/archive'}" method="post" class="d-inline"
+                      th:if="${acc.active}" onsubmit="return confirm('Archive this account?');">
+                    <button type="submit" class="btn btn-sm btn-outline-warning">Archive</button>
+                </form>
+                <form th:action="@{'/accounts/' + ${acc.id} + '/delete'}" method="post" class="d-inline"
+                      onsubmit="return confirm('Delete this account?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(accounts)}">
+            <td colspan="5" class="text-center">No accounts found.</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

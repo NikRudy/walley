@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout (content, pageTitle)">
+
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${pageTitle} ?: 'Walley'">Walley</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+
+<body>
+<header>
+    <!-- здесь оставляем твою навигацию как есть -->
+    <!-- ... тот же navbar, что уже написан ... -->
+</header>
+
+<main class="container mt-4">
+    <!-- Global success / error messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- Сюда будет вставляться контент конкретной страницы -->
+    <div th:insert="${content}"></div>
+</main>
+
+<footer class="footer mt-auto py-3 bg-light">
+    <div class="container">
+        <span class="text-muted">&copy; <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2025</span>
+            Walley. Course project.</span>
+    </div>
+</footer>
+
+<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
