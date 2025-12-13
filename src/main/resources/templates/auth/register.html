@@ -1,35 +1,45 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>Register - Walley</title>
-</head>
-<body>
-<h1>Регистрация</h1>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/main :: layout(~{::section}, 'Register')}">
 
-<form th:action="@{/register}" th:object="${form}" method="post">
-    <!-- CSRF-токен -->
-    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+<section>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h2>Register</h2>
 
-    <label>
-        Логин:
-        <input type="text" th:field="*{username}"/>
-    </label>
-    <br/>
+            <form th:action="@{/register}" th:object="${form}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input id="username" type="text" class="form-control" th:field="*{username}"/>
+                    <div class="text-danger" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                </div>
 
-    <label>
-        Email:
-        <input type="email" th:field="*{email}"/>
-    </label>
-    <br/>
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-mail</label>
+                    <input id="email" type="email" class="form-control" th:field="*{email}"/>
+                    <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                </div>
 
-    <label>
-        Пароль:
-        <input type="password" th:field="*{password}"/>
-    </label>
-    <br/>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input id="password" type="password" class="form-control" th:field="*{password}"/>
+                    <div class="text-danger" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                </div>
 
-    <button type="submit">Зарегистрироваться</button>
-</form>
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">Confirm password</label>
+                    <input id="confirmPassword" type="password" class="form-control" th:field="*{confirmPassword}"/>
+                    <div class="text-danger" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
+                </div>
 
-</body>
+                <div class="text-danger" th:if="${#fields.hasGlobalErrors()}" th:errors="*{_global}"></div>
+
+                <button type="submit" class="btn btn-primary">Create account</button>
+                <a th:href="@{/login}" class="btn btn-link">Already registered?</a>
+            </form>
+        </div>
+    </div>
+</section>
+
 </html>

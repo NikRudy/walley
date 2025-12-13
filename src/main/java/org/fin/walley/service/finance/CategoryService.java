@@ -12,7 +12,7 @@ import java.util.Optional;
 /**
  * Сервис управления категориями финансовых операций.
  */
-interface CategoryService {
+public interface CategoryService {
 
     /**
      * Создание новой категории.

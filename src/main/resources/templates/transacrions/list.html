@@ -1,0 +1,104 @@
+<!-- templates/transactions/list.html -->
+
+
+<!-- Filters -->
+<form class="row g-3 mb-3" th:action="@{/transactions}" method="get">
+    <div class="col-md-2">
+        <label class="form-label">From date</label>
+        <input type="date" class="form-control" name="from" th:value="${from}"/>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">To date</label>
+        <input type="date" class="form-control" name="to" th:value="${to}"/>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Type</label>
+        <select class="form-select" name="type">
+            <option th:value="" th:selected="${selectedType == null}">All</option>
+            <option th:value="INCOME" th:selected="${selectedType?.name() == 'INCOME'}">Income</option>
+            <option th:value="EXPENSE" th:selected="${selectedType?.name() == 'EXPENSE'}">Expense</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Account</label>
+        <select class="form-select" name="accountId">
+            <option th:value="" th:selected="${selectedAccountId == null}">All</option>
+            <option th:each="acc : ${accounts}"
+                    th:value="${acc.id}"
+                    th:text="${acc.name}"
+                    th:selected="${selectedAccountId == acc.id}">
+            </option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Category</label>
+        <select class="form-select" name="categoryId">
+            <option th:value="" th:selected="${selectedCategoryId == null}">All</option>
+            <optgroup label="Income">
+                <option th:each="c : ${incomeCategories}"
+                        th:value="${c.id}"
+                        th:text="${c.name}"
+                        th:selected="${selectedCategoryId == c.id}"></option>
+            </optgroup>
+            <optgroup label="Expense">
+                <option th:each="c : ${expenseCategories}"
+                        th:value="${c.id}"
+                        th:text="${c.name}"
+                        th:selected="${selectedCategoryId == c.id}"></option>
+            </optgroup>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Include deleted</label>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="includeDeleted" value="true"
+                   th:checked="${includeDeleted}" id="includeDeletedCheck"/>
+            <label class="form-check-label" for="includeDeletedCheck">Show deleted</label>
+        </div>
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-secondary">Apply filters</button>
+    </div>
+</form>
+
+
+<!-- Transactions table -->
+<table class="table table-striped table-sm align-middle">
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Account ID</th>
+        <th>Category ID</th>
+        <th>Subcategory ID</th>
+        <th class="text-end">Amount</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="tx : ${transactions}" th:classappend="${tx.deleted} ? 'table-secondary' : ''">
+        <td th:text="${#temporals.format(tx.occurredAt, 'yyyy-MM-dd HH:mm')}"></td>
+        <td th:text="${tx.accountId}"></td>
+        <td th:text="${tx.categoryId}"></td>
+        <td th:text="${tx.subcategoryId}"></td>
+        <td class="text-end" th:text="${tx.amount}"></td>
+        <td th:text="${tx.type}"></td>
+        <td th:text="${tx.description}"></td>
+        <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary me-1"
+               th:href="@{'/transactions/' + ${tx.id} + '/edit'}">Edit</a>
+            <form th:action="@{'/transactions/' + ${tx.id} + '/delete'}" method="post" class="d-inline"
+                  onsubmit="return confirm('Delete this transaction?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+        </td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(transactions)}">
+        <td colspan="8" class="text-center">No transactions found.</td>
+    </tr>
+    </tbody>
+</table>
+</div>
+</body>
+</html>

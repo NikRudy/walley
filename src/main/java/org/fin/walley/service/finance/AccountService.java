@@ -11,7 +11,7 @@ import java.util.Optional;
 /**
  * Сервис для управления счетами пользователя.
  */
-interface AccountService {
+public interface AccountService {
 
     /**
      * Создание нового счёта для пользователя.
