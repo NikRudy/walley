@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Walley | Category</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+</head>
+<body>
+<nav>
+    <a th:href="@{/categories}">Back</a>
+</nav>
+
+
+<h2 th:text="${category.id == null ? 'New category' : 'Edit category'}"></h2>
+
+
+<form th:action="${category.id == null ? '/categories' : '/categories/' + category.id}"
+      th:object="${category}" method="post">
+
+
+    <div>
+        <label>Name</label>
+        <input type="text" th:field="*{name}" />
+        <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+    </div>
+
+
+    <div>
+        <label>Type</label>
+        <select th:field="*{type}">
+            <option th:each="t : ${types}" th:value="${t}" th:text="${t}"></option>
+        </select>
+        <div class="error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></div>
+    </div>
+
+
+    <button type="submit">Save</button>
+</form>
+</body>
+</html>

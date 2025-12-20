@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Walley | Login</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+</head>
+<body>
+<nav>
+    <a th:href="@{/register}">Register</a>
+</nav>
+
+
+<h2>Login</h2>
+
+
+<div th:if="${param.registered}" class="small">Registration completed. Please login.</div>
+<div th:if="${param.logout}" class="small">Logged out.</div>
+<div th:if="${param.error}" class="error">Invalid username or password.</div>
+
+
+<form th:action="@{/login}" method="post">
+    <div>
+        <label>Username</label>
+        <input type="text" name="username" />
+    </div>
+    <div>
+        <label>Password</label>
+        <input type="password" name="password" />
+    </div>
+    <button type="submit">Sign in</button>
+</form>
+
+
+<hr/>
+<p class="small">Admin default: admin / admin123 (поменяйте после запуска)</p>
+</body>
+</html>

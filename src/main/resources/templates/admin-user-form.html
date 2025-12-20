@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Walley | Admin User Form</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+</head>
+<body>
+<nav>
+    <a th:href="@{/admin/users}">Back</a>
+</nav>
+
+
+<h2>User</h2>
+
+
+<form th:action="${userId == null ? '/admin/users' : '/admin/users/' + userId}" th:object="${form}" method="post">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+
+    <div>
+        <label>Username</label>
+        <input type="text" th:field="*{username}" />
+        <div class="error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+        <div class="small" th:if="${userId != null}">На edit менять username не запрещено, но обычно не требуется.</div>
+    </div>
+
+
+    <div>
+        <label>Password (blank = keep on edit)</label>
+        <input type="password" th:field="*{password}" />
+        <div class="error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+    </div>
+
+
+    <div>
+        <label>Role</label>
+        <select th:field="*{role}">
+            <option th:each="r : ${roles}" th:value="${r}" th:text="${r}"></option>
+        </select>
+    </div>
+
+
+    <div>
+        <label>Enabled</label>
+        <input type="checkbox" th:field="*{enabled}" />
+    </div>
+
+
+    <button type="submit">Save</button>
+</form>
+
+
+</body>
+</html>

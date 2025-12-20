@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Walley | Subcategories</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+</head>
+<body>
+<nav>
+    <a th:href="@{/categories}">Back to categories</a>
+</nav>
+
+
+<h2>Subcategories for: <span th:text="${category.name}"></span></h2>
+<a th:href="@{/categories/{id}/subcategories/new(id=${category.id})}">+ New</a>
+
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="s : ${subcategories}">
+        <td th:text="${s.name}"></td>
+        <td>
+            <a th:href="@{/categories/{cid}/subcategories/{id}/edit(cid=${category.id}, id=${s.id})}">Edit</a>
+            <form th:action="@{/categories/{cid}/subcategories/{id}/delete(cid=${category.id}, id=${s.id})}"
+                  method="post" style="display:inline;">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
