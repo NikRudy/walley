@@ -1,7 +1,10 @@
 package org.fin.walley.api;
 
 
+import org.fin.walley.domain.Category;
 import org.fin.walley.domain.Subcategory;
+import org.fin.walley.domain.TransactionType;
+import org.fin.walley.service.CategoryService;
 import org.fin.walley.service.SubcategoryService;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,28 +14,38 @@ import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api")
 public class CategoryApiController {
 
 
-    private final SubcategoryService subService;
+    private final CategoryService categoryService;
+    private final SubcategoryService subcategoryService;
 
 
-    public CategoryApiController(SubcategoryService subService) {
-        this.subService = subService;
+    public CategoryApiController(CategoryService categoryService, SubcategoryService subcategoryService) {
+        this.categoryService = categoryService;
+        this.subcategoryService = subcategoryService;
     }
 
 
-    public record SubDto(Long id, String name) {
-        static SubDto from(Subcategory s) {
-            return new SubDto(s.getId(), s.getName());
-        }
+    public record CategoryDto(Long id, String name) {}
+    public record SubDto(Long id, String name) {}
+
+
+    @GetMapping("/categories")
+    public List<CategoryDto> categories(@RequestParam TransactionType type, Principal principal) {
+        return categoryService.listForUserByType(principal.getName(), type)
+                .stream()
+                .map(c -> new CategoryDto(c.getId(), c.getName()))
+                .toList();
     }
 
 
-    @GetMapping("/{categoryId}/subcategories")
-    public List<SubDto> listSub(@PathVariable Long categoryId, Principal principal) {
-        return subService.listForCategory(principal.getName(), categoryId)
-                .stream().map(SubDto::from).toList();
+    @GetMapping("/categories/{categoryId}/subcategories")
+    public List<SubDto> subcategories(@PathVariable Long categoryId, Principal principal) {
+        return subcategoryService.listForCategory(principal.getName(), categoryId)
+                .stream()
+                .map(s -> new SubDto(s.getId(), s.getName()))
+                .toList();
     }
 }
