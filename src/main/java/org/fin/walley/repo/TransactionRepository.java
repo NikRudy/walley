@@ -87,4 +87,14 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
            """)
     int deleteAllForCategory(@Param("username") String username,
                              @Param("categoryId") Long categoryId);
+
+    @Query("""
+           select t
+           from Transaction t
+           join fetch t.user u
+           left join fetch t.category c
+           left join fetch t.subcategory s
+           order by u.username asc, t.date desc, t.id desc
+           """)
+    List<Transaction> findAllForAdminExport();
 }
