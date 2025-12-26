@@ -51,7 +51,7 @@ public class Transaction {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subcategory_id")
+    @JoinColumn(name = "subcategory_id") // nullable=true по умолчанию
     private Subcategory subcategory;
 
 
