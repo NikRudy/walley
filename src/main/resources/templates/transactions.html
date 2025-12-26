@@ -25,7 +25,10 @@
 <a th:href="@{/transactions/new}">+ New</a>
 
 
-<div class="totals" style="margin: 12px 0;" th:if="${incomeTotal != null}">
+<div class="totals" style="margin: 12px 0;">
+    <div style="margin-bottom:6px;" th:if="${asOf != null}">
+        <b>Balance as of:</b> <span th:text="${asOf}"></span>
+    </div>
     <div><b>Income:</b> <span th:text="${incomeTotal}"></span></div>
     <div><b>Expense:</b> <span th:text="${expenseTotal}"></span></div>
     <div><b>Balance:</b> <span th:text="${balance}"></span></div>

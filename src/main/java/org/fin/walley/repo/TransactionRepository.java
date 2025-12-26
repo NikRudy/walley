@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,5 +25,22 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("select coalesce(sum(t.amount), 0) from Transaction t where t.user.username = :username and t.type = :type")
     BigDecimal sumAmountByUserAndType(@Param("username") String username, @Param("type") TransactionType type);
+
+    @Query("select coalesce(sum(t.amount), 0) " +
+            "from Transaction t " +
+            "where t.user.username = :username " +
+            "and t.type = :type " +
+            "and t.date <= :asOf")
+    BigDecimal sumAmountByUserAndTypeUpToDate(@Param("username") String username,
+                                              @Param("type") TransactionType type,
+                                              @Param("asOf") LocalDate asOf);
+
+
+    @Query("select coalesce(sum(t.amount), 0) " +
+            "from Transaction t " +
+            "where t.user.username = :username " +
+            "and t.date <= :asOf")
+    BigDecimal sumAmountByUserUpToDate(@Param("username") String username,
+                                       @Param("asOf") LocalDate asOf);
 
 }

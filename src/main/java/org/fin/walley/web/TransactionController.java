@@ -1,13 +1,17 @@
 package org.fin.walley.web;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.fin.walley.domain.Category;
+import org.fin.walley.domain.Subcategory;
 import org.fin.walley.domain.Transaction;
 import org.fin.walley.domain.TransactionType;
-import org.fin.walley.service.CategoryService;
-import org.fin.walley.service.SubcategoryService;
+import org.fin.walley.repo.CategoryRepository;
+import org.fin.walley.repo.SubcategoryRepository;
 import org.fin.walley.service.TransactionService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -23,37 +29,33 @@ import java.util.List;
 public class TransactionController {
 
     private final TransactionService txService;
-    private final CategoryService categoryService;
-    private final SubcategoryService subcategoryService;
+    private final CategoryRepository catRepo;
+    private final SubcategoryRepository subRepo;
 
     public TransactionController(TransactionService txService,
-                                 CategoryService categoryService,
-                                 SubcategoryService subcategoryService) {
+                                 CategoryRepository catRepo,
+                                 SubcategoryRepository subRepo) {
         this.txService = txService;
-        this.categoryService = categoryService;
-        this.subcategoryService = subcategoryService;
+        this.catRepo = catRepo;
+        this.subRepo = subRepo;
     }
 
-    /**
-     * DTO формы для Thymeleaf (не JPA-entity).
-     * Храним categoryId/subcategoryId, а в сервис передаем отдельно.
-     */
-    public static class TxForm {
+    // ---------- FORM DTO ----------
 
+    public static class TransactionForm {
         private Long id;
 
         @NotNull
         private TransactionType type;
 
         @NotNull
-        @Positive
-        @Digits(integer = 12, fraction = 2)
+        @DecimalMin(value = "0.00", inclusive = false)
         private BigDecimal amount;
 
         @NotNull
         private LocalDate date;
 
-        @NotNull(message = "Category is required")
+        @NotNull
         private Long categoryId;
 
         private Long subcategoryId;
@@ -82,123 +84,212 @@ public class TransactionController {
         public String getNote() { return note; }
         public void setNote(String note) { this.note = note; }
 
-        static TxForm from(Transaction tx) {
-            TxForm f = new TxForm();
+        public Transaction toEntity() {
+            Transaction tx = new Transaction();
+            tx.setId(this.id);
+            tx.setType(this.type);
+            tx.setAmount(this.amount);
+            tx.setDate(this.date);
+            tx.setNote(this.note);
+            return tx;
+        }
+
+        public static TransactionForm fromEntity(Transaction tx) {
+            TransactionForm f = new TransactionForm();
             f.setId(tx.getId());
             f.setType(tx.getType());
             f.setAmount(tx.getAmount());
             f.setDate(tx.getDate());
             f.setNote(tx.getNote());
-            f.setCategoryId(tx.getCategory() != null ? tx.getCategory().getId() : null);
-            f.setSubcategoryId(tx.getSubcategory() != null ? tx.getSubcategory().getId() : null);
+            if (tx.getCategory() != null) f.setCategoryId(tx.getCategory().getId());
+            if (tx.getSubcategory() != null) f.setSubcategoryId(tx.getSubcategory().getId());
             return f;
-        }
-
-        Transaction toEntity() {
-            Transaction t = new Transaction();
-            t.setType(type);
-            t.setAmount(amount);
-            t.setDate(date);
-            t.setNote(note);
-            return t;
         }
     }
 
+    // ---------- LIST ----------
+
     @GetMapping
-    public String list(Model model, Principal principal) {
+    public String list(Principal principal, Authentication auth, Model model) {
         String username = principal.getName();
 
+        List<Transaction> tx = txService.listForUser(username);
 
-        model.addAttribute("transactions", txService.listForUser(username));
+        LocalDate today = LocalDate.now(ZoneId.of("Europe/Warsaw"));
+        TransactionService.Totals totals = txService.totalsForUserUpTo(username, today);
 
-
-        TransactionService.Totals totals = txService.totalsForUser(username);
+        model.addAttribute("tx", tx);
+        model.addAttribute("asOf", today);
         model.addAttribute("incomeTotal", totals.income());
         model.addAttribute("expenseTotal", totals.expense());
         model.addAttribute("balance", totals.balance());
-
+        model.addAttribute("isAdmin", isAdmin(auth));
 
         return "transactions";
     }
 
+    // ---------- CREATE ----------
+
     @GetMapping("/new")
-    public String createForm(Model model, Principal principal) {
-        String username = principal.getName();
-
-        TxForm form = new TxForm();
+    public String createForm(Principal principal, Authentication auth, Model model) {
+        TransactionForm form = new TransactionForm();
         form.setType(TransactionType.EXPENSE);
-        form.setDate(LocalDate.now());
+        form.setDate(LocalDate.now(ZoneId.of("Europe/Warsaw")));
 
-        List<Category> categories = categoryService.listForUserByType(username, form.getType());
-        if (!categories.isEmpty()) {
-            form.setCategoryId(categories.getFirst().getId());
+        // Подтягиваем категории под дефолтный тип
+        List<Category> categories = loadCategories(principal.getName(), form.getType());
+        boolean noCategories = categories.isEmpty();
+
+        if (!noCategories) {
+            // дефолт — первая категория
+            form.setCategoryId(categories.get(0).getId());
         }
+
+        List<Subcategory> subs = (!noCategories && form.getCategoryId() != null)
+                ? loadSubcategories(principal.getName(), form.getCategoryId())
+                : Collections.emptyList();
 
         model.addAttribute("form", form);
         model.addAttribute("types", TransactionType.values());
         model.addAttribute("categories", categories);
-        model.addAttribute("subcategories",
-                form.getCategoryId() == null ? List.of() : subcategoryService.listForCategory(username, form.getCategoryId())
-        );
-        model.addAttribute("noCategories", categories.isEmpty());
+        model.addAttribute("subcategories", subs);
+        model.addAttribute("noCategories", noCategories);
+        model.addAttribute("isAdmin", isAdmin(auth));
+
         return "transaction-form";
     }
 
     @PostMapping
-    public String create(@ModelAttribute("form") @Valid TxForm form,
+    public String create(Principal principal,
+                         Authentication auth,
+                         @ModelAttribute("form") @Valid TransactionForm form,
                          BindingResult binding,
-                         Principal principal,
                          Model model) {
 
         String username = principal.getName();
 
+        // Если категорий нет (или не выбрана) — не даём сохранить
+        List<Category> categories = loadCategories(username, form.getType());
+        boolean noCategories = categories.isEmpty();
+
+        if (noCategories) {
+            binding.reject("noCategories", "No categories found for selected type.");
+        }
+
         if (binding.hasErrors()) {
-            refillDropdowns(model, username, form);
+            List<Subcategory> subs = (form.getCategoryId() != null)
+                    ? loadSubcategories(username, form.getCategoryId())
+                    : Collections.emptyList();
+
+            model.addAttribute("types", TransactionType.values());
+            model.addAttribute("categories", categories);
+            model.addAttribute("subcategories", subs);
+            model.addAttribute("noCategories", noCategories);
+            model.addAttribute("isAdmin", isAdmin(auth));
             return "transaction-form";
         }
 
-        txService.create(username, form.toEntity(), form.getCategoryId(), form.getSubcategoryId());
-        return "redirect:/transactions";
+        try {
+            txService.create(username, form.toEntity(), form.getCategoryId(), form.getSubcategoryId());
+            return "redirect:/transactions";
+        } catch (IllegalArgumentException ex) {
+            binding.reject("business", ex.getMessage());
+
+            List<Subcategory> subs = (form.getCategoryId() != null)
+                    ? loadSubcategories(username, form.getCategoryId())
+                    : Collections.emptyList();
+
+            model.addAttribute("types", TransactionType.values());
+            model.addAttribute("categories", categories);
+            model.addAttribute("subcategories", subs);
+            model.addAttribute("noCategories", noCategories);
+            model.addAttribute("isAdmin", isAdmin(auth));
+            return "transaction-form";
+        }
     }
 
+    // ---------- EDIT ----------
+
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model, Principal principal) {
+    public String editForm(@PathVariable Long id, Principal principal, Authentication auth, Model model) {
         String username = principal.getName();
 
         Transaction tx = txService.findOwned(username, id);
-        TxForm form = TxForm.from(tx);
+        TransactionForm form = TransactionForm.fromEntity(tx);
+
+        List<Category> categories = loadCategories(username, form.getType());
+        boolean noCategories = categories.isEmpty();
+
+        // если по какой-то причине категория отсутствует/удалена — не падаем
+        if (!noCategories && form.getCategoryId() == null) {
+            form.setCategoryId(categories.get(0).getId());
+        }
+
+        List<Subcategory> subs = (form.getCategoryId() != null)
+                ? loadSubcategories(username, form.getCategoryId())
+                : Collections.emptyList();
 
         model.addAttribute("form", form);
         model.addAttribute("types", TransactionType.values());
-
-        List<Category> categories = categoryService.listForUserByType(username, form.getType());
         model.addAttribute("categories", categories);
-
-        model.addAttribute("subcategories",
-                form.getCategoryId() == null ? List.of() : subcategoryService.listForCategory(username, form.getCategoryId())
-        );
-        model.addAttribute("noCategories", categories.isEmpty());
+        model.addAttribute("subcategories", subs);
+        model.addAttribute("noCategories", noCategories);
+        model.addAttribute("isAdmin", isAdmin(auth));
 
         return "transaction-form";
     }
 
     @PostMapping("/{id}")
     public String update(@PathVariable Long id,
-                         @ModelAttribute("form") @Valid TxForm form,
-                         BindingResult binding,
                          Principal principal,
+                         Authentication auth,
+                         @ModelAttribute("form") @Valid TransactionForm form,
+                         BindingResult binding,
                          Model model) {
 
         String username = principal.getName();
+        form.setId(id);
+
+        List<Category> categories = loadCategories(username, form.getType());
+        boolean noCategories = categories.isEmpty();
+
+        if (noCategories) {
+            binding.reject("noCategories", "No categories found for selected type.");
+        }
 
         if (binding.hasErrors()) {
-            refillDropdowns(model, username, form);
+            List<Subcategory> subs = (form.getCategoryId() != null)
+                    ? loadSubcategories(username, form.getCategoryId())
+                    : Collections.emptyList();
+
+            model.addAttribute("types", TransactionType.values());
+            model.addAttribute("categories", categories);
+            model.addAttribute("subcategories", subs);
+            model.addAttribute("noCategories", noCategories);
+            model.addAttribute("isAdmin", isAdmin(auth));
             return "transaction-form";
         }
 
-        txService.update(username, id, form.toEntity(), form.getCategoryId(), form.getSubcategoryId());
-        return "redirect:/transactions";
+        try {
+            txService.update(username, id, form.toEntity(), form.getCategoryId(), form.getSubcategoryId());
+            return "redirect:/transactions";
+        } catch (IllegalArgumentException ex) {
+            binding.reject("business", ex.getMessage());
+
+            List<Subcategory> subs = (form.getCategoryId() != null)
+                    ? loadSubcategories(username, form.getCategoryId())
+                    : Collections.emptyList();
+
+            model.addAttribute("types", TransactionType.values());
+            model.addAttribute("categories", categories);
+            model.addAttribute("subcategories", subs);
+            model.addAttribute("noCategories", noCategories);
+            model.addAttribute("isAdmin", isAdmin(auth));
+            return "transaction-form";
+        }
     }
+
+    // ---------- DELETE ----------
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, Principal principal) {
@@ -206,16 +297,27 @@ public class TransactionController {
         return "redirect:/transactions";
     }
 
-    private void refillDropdowns(Model model, String username, TxForm form) {
-        model.addAttribute("types", TransactionType.values());
+    // ---------- HELPERS ----------
 
-        List<Category> categories = categoryService.listForUserByType(username, form.getType());
-        model.addAttribute("categories", categories);
+    private boolean isAdmin(Authentication auth) {
+        if (auth == null || auth.getAuthorities() == null) return false;
+        return auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
 
-        model.addAttribute("subcategories",
-                form.getCategoryId() == null ? List.of() : subcategoryService.listForCategory(username, form.getCategoryId())
-        );
+    /**
+     * ВАЖНО:
+     * Подстройте имена методов репозитория под ваши реальные сигнатуры.
+     * Я использую самые типичные названия для Spring Data.
+     */
+    private List<Category> loadCategories(String username, TransactionType type) {
+        // Ожидаемый метод в CategoryRepository:
+        // List<Category> findByUserUsernameAndTypeOrderByNameAsc(String username, TransactionType type);
+        return catRepo.findByUserUsernameAndTypeOrderByNameAsc(username, type);
+    }
 
-        model.addAttribute("noCategories", categories.isEmpty());
+    private List<Subcategory> loadSubcategories(String username, Long categoryId) {
+        // Ожидаемый метод в SubcategoryRepository:
+        // List<Subcategory> findByCategoryIdAndCategoryUserUsernameOrderByNameAsc(Long categoryId, String username);
+        return subRepo.findByCategoryIdAndCategoryUserUsernameOrderByNameAsc(categoryId, username);
     }
 }
