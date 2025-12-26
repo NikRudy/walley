@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <title>Walley | Transaction</title>
     <link rel="stylesheet" th:href="@{/css/app.css}" />
+    <!-- контекст приложения (на случай, если не /) -->
+    <meta name="appCtx" th:content="@{/}" />
 </head>
 <body>
 
@@ -20,7 +22,12 @@
 
 <h2 th:text="${form.id != null ? 'Edit transaction' : 'New transaction'}"></h2>
 
-<div th:if="${noCategories}" style="margin: 12px 0; padding: 10px; border: 1px solid #ccc;">
+<!-- Важно: блок всегда в DOM, чтобы JS мог скрывать/показывать -->
+<div id="noCatBox"
+     style="margin: 12px 0; padding: 10px; border: 1px solid #ccc; display:none;"
+     th:style="${noCategories} ?
+        'margin: 12px 0; padding: 10px; border: 1px solid #ccc; display:block;' :
+        'margin: 12px 0; padding: 10px; border: 1px solid #ccc; display:none;'">
     <b>No categories found</b> for the selected type. Create at least one category first.
     <div style="margin-top:8px;">
         <a th:href="@{/categories}">Go to Categories</a>
@@ -28,7 +35,8 @@
 </div>
 
 <form th:object="${form}"
-      th:action="${form.id != null} ? '/transactions/' + ${form.id} : '/transactions'"
+      th:with="actionUrl=${form.id != null} ? '/transactions/' + form.id : '/transactions'"
+      th:action="@{${actionUrl}}"
       method="post">
 
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
@@ -77,7 +85,7 @@
     </div>
 
     <div style="margin-top: 14px;">
-        <button type="submit" th:disabled="${noCategories}">Save</button>
+        <button id="saveBtn" type="submit" th:disabled="${noCategories}">Save</button>
         <a th:href="@{/transactions}" style="margin-left:10px;">Cancel</a>
     </div>
 </form>
@@ -87,8 +95,20 @@
         const typeEl = document.getElementById('type');
         const catEl  = document.getElementById('categoryId');
         const subEl  = document.getElementById('subcategoryId');
+        const saveBtn = document.getElementById('saveBtn');
+        const noCatBox = document.getElementById('noCatBox');
 
         if (!typeEl || !catEl || !subEl) return;
+
+        const base = (document.querySelector('meta[name="appCtx"]')?.content || '/');
+
+        function setSaveEnabled(enabled) {
+            if (saveBtn) saveBtn.disabled = !enabled;
+        }
+
+        function showNoCategories(show) {
+            if (noCatBox) noCatBox.style.display = show ? 'block' : 'none';
+        }
 
         async function fetchJson(url) {
             const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -120,7 +140,7 @@
 
         async function loadCategories(selectedCatId) {
             const type = typeEl.value;
-            const cats = await fetchJson(`/api/categories?type=${encodeURIComponent(type)}`);
+            const cats = await fetchJson(`${base}api/categories?type=${encodeURIComponent(type)}`);
 
             if (!cats || cats.length === 0) {
                 catEl.innerHTML = '';
@@ -128,6 +148,9 @@
 
                 setOptions(subEl, [], '', true);
                 subEl.disabled = true;
+
+                setSaveEnabled(false);
+                showNoCategories(true);
                 return null;
             }
 
@@ -135,6 +158,9 @@
 
             const initial = selectedCatId ?? cats[0].id;
             setOptions(catEl, cats, initial, false);
+
+            setSaveEnabled(true);
+            showNoCategories(false);
 
             return catEl.value;
         }
@@ -146,7 +172,7 @@
                 return;
             }
 
-            const subs = await fetchJson(`/api/categories/${categoryId}/subcategories`);
+            const subs = await fetchJson(`${base}api/categories/${categoryId}/subcategories`);
             subEl.disabled = false;
             setOptions(subEl, subs ?? [], selectedSubId ?? '', true);
         }
@@ -170,10 +196,18 @@
             }
         });
 
-        // On load: if category not selected, disable subcategory
-        if (!catEl.value) {
-            subEl.disabled = true;
-        }
+        // init on page load: синхронизируем selects и Save
+        (async () => {
+            try {
+                const existingCat = catEl.value || null;
+                const existingSub = subEl.value || null;
+
+                const catId = await loadCategories(existingCat);
+                await loadSubcategories(catId, existingSub);
+            } catch (e) {
+                console.error(e);
+            }
+        })();
     })();
 </script>
 

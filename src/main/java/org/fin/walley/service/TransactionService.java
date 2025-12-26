@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -31,6 +32,7 @@ public class TransactionService {
     }
 
 
+    @Transactional(readOnly = true)
     public List<Transaction> listForUser(String username) {
         return txRepo.findByUserUsernameOrderByDateDescIdDesc(username);
     }
@@ -117,5 +119,19 @@ public class TransactionService {
     public AppUser requireUser(String username) {
         return users.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public record Totals(BigDecimal income, BigDecimal expense, BigDecimal balance) {}
+
+
+
+
+
+    @Transactional(readOnly = true)
+    public Totals totalsForUser(String username) {
+        BigDecimal income = txRepo.sumAmountByUserAndType(username, TransactionType.INCOME);
+        BigDecimal expense = txRepo.sumAmountByUserAndType(username, TransactionType.EXPENSE);
+        BigDecimal balance = income.subtract(expense);
+        return new Totals(income, expense, balance);
     }
 }

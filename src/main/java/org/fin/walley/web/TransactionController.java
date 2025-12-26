@@ -106,7 +106,18 @@ public class TransactionController {
 
     @GetMapping
     public String list(Model model, Principal principal) {
-        model.addAttribute("tx", txService.listForUser(principal.getName()));
+        String username = principal.getName();
+
+
+        model.addAttribute("transactions", txService.listForUser(username));
+
+
+        TransactionService.Totals totals = txService.totalsForUser(username);
+        model.addAttribute("incomeTotal", totals.income());
+        model.addAttribute("expenseTotal", totals.expense());
+        model.addAttribute("balance", totals.balance());
+
+
         return "transactions";
     }
 
