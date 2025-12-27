@@ -1,20 +1,26 @@
 package org.fin.walley.web;
 
 import org.fin.walley.domain.AppUser;
+import org.fin.walley.domain.Category;
+import org.fin.walley.domain.Subcategory;
 import org.fin.walley.domain.Transaction;
 import org.fin.walley.repo.AppUserRepository;
+import org.fin.walley.repo.CategoryRepository;
+import org.fin.walley.repo.SubcategoryRepository;
 import org.fin.walley.repo.TransactionRepository;
 import org.fin.walley.service.ImportExportService;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/admin/export")
@@ -22,40 +28,76 @@ public class AdminExportController {
 
     private final AppUserRepository userRepo;
     private final TransactionRepository txRepo;
+    private final CategoryRepository catRepo;
+    private final SubcategoryRepository subRepo;
     private final ImportExportService importExportService;
-    private final tools.jackson.databind.ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     public AdminExportController(AppUserRepository userRepo,
                                  TransactionRepository txRepo,
+                                 CategoryRepository catRepo,
+                                 SubcategoryRepository subRepo,
                                  ImportExportService importExportService,
                                  ObjectMapper objectMapper) {
         this.userRepo = userRepo;
         this.txRepo = txRepo;
+        this.catRepo = catRepo;
+        this.subRepo = subRepo;
         this.importExportService = importExportService;
         this.objectMapper = objectMapper;
     }
 
-    @GetMapping(value = "/users-tasks.csv", produces = "text/csv")
-    public ResponseEntity<byte[]> exportUsersTasksCsv() {
-        List<ImportExportService.UserWithTasksJson> payload = buildPayload();
+    // =========================================================
+    // EXPORT ALL USERS TRANSACTIONS
+    // =========================================================
 
-        String csv = importExportService.exportUsersWithTasksToCsv(payload);
+    @GetMapping(value = "/all-transactions.csv", produces = "text/csv")
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> exportAllTransactionsCsv() {
+        List<ImportExportService.AdminTxRow> rows = txRepo.findAllForAdminExport().stream()
+                .map(t -> new ImportExportService.AdminTxRow(
+                        t.getUser().getUsername(),
+                        t.getType(),
+                        t.getAmount(),
+                        t.getDate(),
+                        t.getCategory() != null ? t.getCategory().getName() : null,
+                        t.getSubcategory() != null ? t.getSubcategory().getName() : null,
+                        t.getNote()
+                ))
+                .toList();
+
+        String csv = importExportService.exportAllUsersTransactionsToCsv(rows);
         byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
 
+        String filename = "all-transactions-" + LocalDate.now() + ".csv";
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"users-tasks.csv\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
                 .body(bytes);
     }
 
-    @GetMapping(value = "/users-tasks.json", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<byte[]> exportUsersTasksJson() {
-        List<ImportExportService.UserWithTasksJson> payload = buildPayload();
+    @GetMapping(value = "/all-transactions.json", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Transactional(readOnly = true)
+    public ResponseEntity<byte[]> exportAllTransactionsJson() {
+        List<ImportExportService.AdminTxRow> rows = txRepo.findAllForAdminExport().stream()
+                .map(t -> new ImportExportService.AdminTxRow(
+                        t.getUser().getUsername(),
+                        t.getType(),
+                        t.getAmount(),
+                        t.getDate(),
+                        t.getCategory() != null ? t.getCategory().getName() : null,
+                        t.getSubcategory() != null ? t.getSubcategory().getName() : null,
+                        t.getNote()
+                ))
+                .toList();
 
         try {
-            byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(payload);
+            byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(rows);
+            String filename = "all-transactions-" + LocalDate.now() + ".json";
+
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"users-tasks.json\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(bytes);
         } catch (Exception e) {
@@ -63,43 +105,73 @@ public class AdminExportController {
         }
     }
 
-    private List<ImportExportService.UserWithTasksJson> buildPayload() {
-        // все пользователи
-        List<AppUser> users = userRepo.findAll(Sort.by(Sort.Direction.ASC, "username"));
+    // =========================================================
+    // IMPORT ALL USERS TRANSACTIONS (CSV/JSON via multipart file)
+    // =========================================================
 
-        // все транзакции с join fetch (user/category/subcategory)
-        List<Transaction> allTx = txRepo.findAllForAdminExport();
+    @PostMapping(value = "/import/all-transactions/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Transactional
+    public ResponseEntity<String> importAllTransactionsCsv(@RequestParam("file") MultipartFile file) {
+        List<ImportExportService.AdminTxRow> rows = importExportService.importAllUsersTransactionsFromCsv(file);
+        int imported = importRows(rows);
+        return ResponseEntity.ok("Imported: " + imported);
+    }
 
-        Map<Long, List<Transaction>> byUserId = allTx.stream()
-                .filter(t -> t.getUser() != null && t.getUser().getId() != null)
-                .collect(Collectors.groupingBy(t -> t.getUser().getId()));
+    @PostMapping(value = "/import/all-transactions/json", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Transactional
+    public ResponseEntity<String> importAllTransactionsJson(@RequestParam("file") MultipartFile file) {
+        try {
+            List<ImportExportService.AdminTxRow> rows =
+                    objectMapper.readValue(file.getInputStream(), new TypeReference<List<ImportExportService.AdminTxRow>>() {});
+            int imported = importRows(rows);
+            return ResponseEntity.ok("Imported: " + imported);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid JSON format: " + e.getMessage(), e);
+        }
+    }
 
-        List<ImportExportService.UserWithTasksJson> payload = new ArrayList<>();
+    /**
+     * Импорт: раскладываем транзакции по username.
+     * Если категории/подкатегории не существуют — создаём.
+     */
+    private int importRows(List<ImportExportService.AdminTxRow> rows) {
+        int count = 0;
 
-        for (AppUser u : users) {
-            List<Transaction> txList = byUserId.getOrDefault(u.getId(), List.of());
+        for (ImportExportService.AdminTxRow r : rows) {
+            AppUser user = userRepo.findByUsername(r.username())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found: " + r.username()));
 
-            List<ImportExportService.AdminTxJson> tasks = txList.stream()
-                    .map(t -> new ImportExportService.AdminTxJson(
-                            t.getId(),
-                            t.getType(),
-                            t.getAmount(),
-                            t.getDate(),
-                            t.getCategory() != null ? t.getCategory().getName() : null,
-                            t.getSubcategory() != null ? t.getSubcategory().getName() : null,
-                            t.getNote()
-                    ))
-                    .toList();
+            // категория обязательна (у вас транзакции требуют category для логики)
+            Category cat = catRepo.findByUserUsernameAndTypeAndName(user.getUsername(), r.type(), r.category())
+                    .orElseGet(() -> catRepo.save(Category.builder()
+                            .name(r.category())
+                            .type(r.type())
+                            .user(user)
+                            .build()));
 
-            payload.add(new ImportExportService.UserWithTasksJson(
-                    u.getId(),
-                    u.getUsername(),
-                    u.getRole() != null ? u.getRole().name() : null,
-                    u.isEnabled(),
-                    tasks
-            ));
+            Subcategory sub = null;
+            if (r.subcategory() != null && !r.subcategory().isBlank()) {
+                sub = subRepo.findByCategoryIdAndNameAndCategoryUserUsername(cat.getId(), r.subcategory(), user.getUsername())
+                        .orElseGet(() -> subRepo.save(Subcategory.builder()
+                                .name(r.subcategory())
+                                .category(cat)
+                                .build()));
+            }
+
+            Transaction tx = new Transaction();
+            tx.setId(null);
+            tx.setUser(user);
+            tx.setType(r.type());
+            tx.setAmount(r.amount());
+            tx.setDate(r.date());
+            tx.setCategory(cat);
+            tx.setSubcategory(sub);
+            tx.setNote(r.note());
+
+            txRepo.save(tx);
+            count++;
         }
 
-        return payload;
+        return count;
     }
 }

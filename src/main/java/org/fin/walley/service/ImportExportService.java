@@ -18,10 +18,10 @@ import java.util.List;
 public class ImportExportService {
 
     // =========================
-    // Transactions CSV import/export (existing)
+    // USER: Transactions CSV import/export (existing)
+    // CSV header: type,amount,date,category,subcategory,note
     // =========================
 
-    // CSV header: type,amount,date,category,subcategory,note
     public record CsvRow(
             TransactionType type,
             BigDecimal amount,
@@ -90,11 +90,12 @@ public class ImportExportService {
     }
 
     // =========================
-    // ADMIN export: users + "tasks" (transactions)
+    // ADMIN: All users transactions CSV
+    // CSV header: username,type,amount,date,category,subcategory,note
     // =========================
 
-    public record AdminTxJson(
-            Long id,
+    public record AdminTxRow(
+            String username,
             TransactionType type,
             BigDecimal amount,
             LocalDate date,
@@ -103,60 +104,57 @@ public class ImportExportService {
             String note
     ) {}
 
-    public record UserWithTasksJson(
-            Long id,
-            String username,
-            String role,
-            boolean enabled,
-            List<AdminTxJson> tasks
-    ) {}
-
-    /**
-     * CSV для админа (плоский формат):
-     * user_id,username,role,enabled,tx_id,type,amount,date,category,subcategory,note
-     */
-    public String exportUsersWithTasksToCsv(List<UserWithTasksJson> users) {
+    public String exportAllUsersTransactionsToCsv(List<AdminTxRow> rows) {
         StringWriter out = new StringWriter();
         try (CSVWriter writer = new CSVWriter(out)) {
-            writer.writeNext(new String[]{
-                    "user_id", "username", "role", "enabled",
-                    "tx_id", "type", "amount", "date", "category", "subcategory", "note"
-            });
+            writer.writeNext(new String[]{"username", "type", "amount", "date", "category", "subcategory", "note"});
 
-            for (UserWithTasksJson u : users) {
-                List<AdminTxJson> tasks = (u.tasks() == null ? List.of() : u.tasks());
-
-                if (tasks.isEmpty()) {
-                    writer.writeNext(new String[]{
-                            String.valueOf(u.id()),
-                            nullToEmpty(u.username()),
-                            nullToEmpty(u.role()),
-                            String.valueOf(u.enabled()),
-                            "", "", "", "", "", "", ""
-                    });
-                    continue;
-                }
-
-                for (AdminTxJson t : tasks) {
-                    writer.writeNext(new String[]{
-                            String.valueOf(u.id()),
-                            nullToEmpty(u.username()),
-                            nullToEmpty(u.role()),
-                            String.valueOf(u.enabled()),
-                            t.id() == null ? "" : String.valueOf(t.id()),
-                            t.type() == null ? "" : t.type().name(),
-                            t.amount() == null ? "" : t.amount().toPlainString(),
-                            t.date() == null ? "" : t.date().toString(),
-                            nullToEmpty(t.category()),
-                            nullToEmpty(t.subcategory()),
-                            nullToEmpty(t.note())
-                    });
-                }
+            for (AdminTxRow r : rows) {
+                writer.writeNext(new String[]{
+                        nullToEmpty(r.username()),
+                        r.type() != null ? r.type().name() : "",
+                        r.amount() != null ? r.amount().toPlainString() : "",
+                        r.date() != null ? r.date().toString() : "",
+                        nullToEmpty(r.category()),
+                        nullToEmpty(r.subcategory()),
+                        nullToEmpty(r.note())
+                });
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return out.toString();
+    }
+
+    public List<AdminTxRow> importAllUsersTransactionsFromCsv(MultipartFile file) {
+        try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
+             CSVReader csv = new CSVReader(reader)) {
+
+            List<String[]> rows = csv.readAll();
+            if (rows.isEmpty()) return List.of();
+
+            List<AdminTxRow> result = new ArrayList<>();
+
+            // skip header
+            for (int i = 1; i < rows.size(); i++) {
+                String[] r = rows.get(i);
+                if (r.length < 5) continue;
+
+                String username = safeRequired(r, 0, "username");
+                TransactionType type = TransactionType.valueOf(safeRequired(r, 1, "type"));
+                BigDecimal amount = new BigDecimal(safeRequired(r, 2, "amount"));
+                LocalDate date = LocalDate.parse(safeRequired(r, 3, "date"));
+                String category = safeRequired(r, 4, "category");
+                String subcategory = safe(r, 5);
+                String note = safe(r, 6);
+
+                result.add(new AdminTxRow(username, type, amount, date, category, subcategory, note));
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid CSV format: " + e.getMessage(), e);
+        }
     }
 
     // =========================
@@ -169,6 +167,14 @@ public class ImportExportService {
         if (v == null) return null;
         v = v.trim();
         return v.isEmpty() ? null : v;
+    }
+
+    private static String safeRequired(String[] row, int idx, String field) {
+        String v = safe(row, idx);
+        if (v == null || v.isBlank()) {
+            throw new IllegalArgumentException("CSV row has empty " + field + " (required)");
+        }
+        return v;
     }
 
     private static String nullToEmpty(String s) {

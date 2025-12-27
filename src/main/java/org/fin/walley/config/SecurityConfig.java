@@ -1,6 +1,5 @@
 package org.fin.walley.config;
 
-
 import org.fin.walley.domain.AppUser;
 import org.fin.walley.repo.AppUserRepository;
 import org.springframework.context.annotation.Bean;
@@ -12,23 +11,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
-
 @Configuration
 public class SecurityConfig {
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-
     @Bean
     public UserDetailsService userDetailsService(AppUserRepository users) {
         return username -> {
             AppUser u = users.findByUsername(username)
                     .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
-
 
             return User.withUsername(u.getUsername())
                     .password(u.getPasswordHash())
@@ -37,7 +32,6 @@ public class SecurityConfig {
                     .build();
         };
     }
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -58,9 +52,8 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 )
-// Для Postman/JSON API проще отключить CSRF только на /api/**
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
-
+                // CSRF отключаем для /api/** и для admin import/export
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/admin/export/**"));
 
         return http.build();
     }

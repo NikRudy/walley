@@ -1,8 +1,5 @@
 package org.fin.walley.api;
 
-
-import org.fin.walley.domain.Category;
-import org.fin.walley.domain.Subcategory;
 import org.fin.walley.domain.TransactionType;
 import org.fin.walley.service.CategoryService;
 import org.fin.walley.service.SubcategoryService;
