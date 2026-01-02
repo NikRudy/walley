@@ -57,19 +57,12 @@ public class SubcategoryService {
         return s;
     }
 
-    /**
-     * Вариант A: транзакции НЕ удаляем.
-     * Чтобы удалить subcategory — отвязываем её от транзакций (subcategory_id -> NULL).
-     */
+
     @Transactional
     public void delete(String username, Long id) {
-        // проверка владения
+
         findOwned(username, id);
-
-        // 1) отвязать подкатегорию у транзакций пользователя
         txRepo.clearSubcategory(username, id);
-
-        // 2) удалить саму подкатегорию
         subRepo.deleteById(id);
     }
 }

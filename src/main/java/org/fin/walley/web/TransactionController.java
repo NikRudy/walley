@@ -40,7 +40,6 @@ public class TransactionController {
         this.subRepo = subRepo;
     }
 
-    // ---------- FORM DTO ----------
 
     public static class TransactionForm {
         private Long id;
@@ -107,7 +106,6 @@ public class TransactionController {
         }
     }
 
-    // ---------- LIST ----------
 
     @GetMapping
     public String list(Principal principal, Authentication auth, Model model) {
@@ -128,7 +126,6 @@ public class TransactionController {
         return "transactions";
     }
 
-    // ---------- CREATE ----------
 
     @GetMapping("/new")
     public String createForm(Principal principal, Authentication auth, Model model) {
@@ -136,12 +133,12 @@ public class TransactionController {
         form.setType(TransactionType.EXPENSE);
         form.setDate(LocalDate.now(ZoneId.of("Europe/Warsaw")));
 
-        // Подтягиваем категории под дефолтный тип
+
         List<Category> categories = loadCategories(principal.getName(), form.getType());
         boolean noCategories = categories.isEmpty();
 
         if (!noCategories) {
-            // дефолт — первая категория
+
             form.setCategoryId(categories.get(0).getId());
         }
 
@@ -168,7 +165,7 @@ public class TransactionController {
 
         String username = principal.getName();
 
-        // Если категорий нет (или не выбрана) — не даём сохранить
+
         List<Category> categories = loadCategories(username, form.getType());
         boolean noCategories = categories.isEmpty();
 
@@ -208,7 +205,7 @@ public class TransactionController {
         }
     }
 
-    // ---------- EDIT ----------
+
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Principal principal, Authentication auth, Model model) {
@@ -220,7 +217,7 @@ public class TransactionController {
         List<Category> categories = loadCategories(username, form.getType());
         boolean noCategories = categories.isEmpty();
 
-        // если по какой-то причине категория отсутствует/удалена — не падаем
+
         if (!noCategories && form.getCategoryId() == null) {
             form.setCategoryId(categories.get(0).getId());
         }
@@ -289,7 +286,7 @@ public class TransactionController {
         }
     }
 
-    // ---------- DELETE ----------
+
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, Principal principal) {
@@ -297,27 +294,20 @@ public class TransactionController {
         return "redirect:/transactions";
     }
 
-    // ---------- HELPERS ----------
 
     private boolean isAdmin(Authentication auth) {
         if (auth == null || auth.getAuthorities() == null) return false;
         return auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 
-    /**
-     * ВАЖНО:
-     * Подстройте имена методов репозитория под ваши реальные сигнатуры.
-     * Я использую самые типичные названия для Spring Data.
-     */
+
     private List<Category> loadCategories(String username, TransactionType type) {
-        // Ожидаемый метод в CategoryRepository:
-        // List<Category> findByUserUsernameAndTypeOrderByNameAsc(String username, TransactionType type);
+
         return catRepo.findByUserUsernameAndTypeOrderByNameAsc(username, type);
     }
 
     private List<Subcategory> loadSubcategories(String username, Long categoryId) {
-        // Ожидаемый метод в SubcategoryRepository:
-        // List<Subcategory> findByCategoryIdAndCategoryUserUsernameOrderByNameAsc(Long categoryId, String username);
+
         return subRepo.findByCategoryIdAndCategoryUserUsernameOrderByNameAsc(categoryId, username);
     }
 }

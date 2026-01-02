@@ -47,9 +47,6 @@ public class AdminExportController {
         this.objectMapper = objectMapper;
     }
 
-    // =========================================================
-    // EXPORT ALL USERS TRANSACTIONS
-    // =========================================================
 
     @GetMapping(value = "/all-transactions.csv", produces = "text/csv")
     @Transactional(readOnly = true)
@@ -105,9 +102,6 @@ public class AdminExportController {
         }
     }
 
-    // =========================================================
-    // IMPORT ALL USERS TRANSACTIONS (CSV/JSON via multipart file)
-    // =========================================================
 
     @PostMapping(value = "/import/all-transactions/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Transactional
@@ -130,10 +124,7 @@ public class AdminExportController {
         }
     }
 
-    /**
-     * Импорт: раскладываем транзакции по username.
-     * Если категории/подкатегории не существуют — создаём.
-     */
+
     private int importRows(List<ImportExportService.AdminTxRow> rows) {
         int count = 0;
 
@@ -141,7 +132,6 @@ public class AdminExportController {
             AppUser user = userRepo.findByUsername(r.username())
                     .orElseThrow(() -> new IllegalArgumentException("User not found: " + r.username()));
 
-            // категория обязательна (у вас транзакции требуют category для логики)
             Category cat = catRepo.findByUserUsernameAndTypeAndName(user.getUsername(), r.type(), r.category())
                     .orElseGet(() -> catRepo.save(Category.builder()
                             .name(r.category())

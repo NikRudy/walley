@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>Walley | Transaction</title>
     <link rel="stylesheet" th:href="@{/css/app.css}" />
-    <!-- контекст приложения (на случай, если не /) -->
+
     <meta name="appCtx" th:content="@{/}" />
 </head>
 <body>
@@ -22,7 +22,7 @@
 
 <h2 th:text="${form.id != null ? 'Edit transaction' : 'New transaction'}"></h2>
 
-<!-- Важно: блок всегда в DOM, чтобы JS мог скрывать/показывать -->
+
 <div id="noCatBox"
      style="margin: 12px 0; padding: 10px; border: 1px solid #ccc; display:none;"
      th:style="${noCategories} ?
@@ -177,7 +177,7 @@
             setOptions(subEl, subs ?? [], selectedSubId ?? '', true);
         }
 
-        // change type -> reload categories + subcategories
+
         typeEl.addEventListener('change', async () => {
             try {
                 const catId = await loadCategories(null);
@@ -187,7 +187,7 @@
             }
         });
 
-        // change category -> reload subcategories
+
         catEl.addEventListener('change', async () => {
             try {
                 await loadSubcategories(catEl.value, null);
@@ -196,7 +196,7 @@
             }
         });
 
-        // init on page load: синхронизируем selects и Save
+
         (async () => {
             try {
                 const existingCat = catEl.value || null;

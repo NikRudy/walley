@@ -29,9 +29,6 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public List<Transaction> listForUser(String username) {
-        // Убедитесь, что у вас репозиторий содержит именно этот метод.
-        // Если у вас называется иначе (например, findByUserUsernameOrderByDateDescIdDesc),
-        // просто поменяйте имя здесь под ваш репозиторий.
         return txRepo.findByUserUsernameOrderByDateDescIdDesc(username);
     }
 
@@ -54,7 +51,6 @@ public class TransactionService {
         Category cat = catRepo.findByIdAndUserUsername(categoryId, username)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
 
-        // Бизнес-правило: категория должна совпадать по типу (INCOME/EXPENSE)
         if (cat.getType() != tx.getType()) {
             throw new IllegalArgumentException("Category type must match transaction type");
         }
@@ -89,8 +85,6 @@ public class TransactionService {
         tx.setSubcategory(sub);
         tx.setNote(form.getNote());
 
-        // Явный save — чтобы не зависеть от поведения persistence context
-        // и избежать сюрпризов при дальнейших изменениях.
         return txRepo.save(tx);
     }
 

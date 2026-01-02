@@ -38,8 +38,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                               @Param("type") TransactionType type,
                                               @Param("asOf") LocalDate asOf);
 
-    // --------- ВАЖНО ДЛЯ УДАЛЕНИЯ ПОЛЬЗОВАТЕЛЯ ---------
-
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Transactional
     @Query("delete from Transaction t where t.user.id = :userId")
@@ -47,10 +45,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     // --------- ВАЖНО ДЛЯ УДАЛЕНИЯ КАТЕГОРИИ / ПОДКАТЕГОРИИ ---------
 
-    /**
-     * Снять ссылку на subcategory у транзакций (транзакции остаются).
-     * Работает только если в Transaction.subcategory join-column nullable=true.
-     */
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Transactional
     @Query("""
@@ -62,11 +57,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     int clearSubcategory(@Param("username") String username,
                          @Param("subId") Long subId);
 
-    /**
-     * ВАЖНО: category обычно обязательная (nullable=false), поэтому "обнулить" нельзя.
-     * Поэтому этот метод делает "очистку" категории через удаление транзакций этой категории.
-     * Это позволяет удалить Category без FK-ошибок.
-     */
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Transactional
     @Query("""
@@ -77,7 +68,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     int clearCategory(@Param("username") String username,
                       @Param("categoryId") Long categoryId);
 
-    // (Опционально, для читаемости — то же самое, но с нормальным названием)
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Transactional
     @Query("""

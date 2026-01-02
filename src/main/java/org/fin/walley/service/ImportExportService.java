@@ -17,10 +17,6 @@ import java.util.List;
 @Service
 public class ImportExportService {
 
-    // =========================
-    // USER: Transactions CSV import/export (existing)
-    // CSV header: type,amount,date,category,subcategory,note
-    // =========================
 
     public record CsvRow(
             TransactionType type,
@@ -89,10 +85,6 @@ public class ImportExportService {
         }
     }
 
-    // =========================
-    // ADMIN: All users transactions CSV
-    // CSV header: username,type,amount,date,category,subcategory,note
-    // =========================
 
     public record AdminTxRow(
             String username,
@@ -157,9 +149,7 @@ public class ImportExportService {
         }
     }
 
-    // =========================
-    // helpers
-    // =========================
+
 
     private static String safe(String[] row, int idx) {
         if (idx >= row.length) return null;

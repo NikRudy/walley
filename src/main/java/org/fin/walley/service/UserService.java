@@ -37,9 +37,6 @@ public class UserService {
     }
 
 
-// -----------------
-// READ
-// -----------------
 
 
     public List<AppUser> findAll() {
@@ -53,9 +50,7 @@ public class UserService {
     }
 
 
-// -----------------
-// VALIDATION
-// -----------------
+
 
 
     public boolean usernameTaken(String username) {
@@ -66,12 +61,10 @@ public class UserService {
     }
 
 
-// -----------------
-// CREATE
-// -----------------
 
 
-    /** Создание пользователя админом (как в AdminUserController). */
+
+
     @Transactional
     public AppUser createByAdmin(String username, String rawPassword, Role role, boolean enabled) {
         if (username == null || username.isBlank()) {
@@ -99,7 +92,7 @@ public class UserService {
 
         return userRepo.save(user);
     }
-    /** Регистрация обычного пользователя (как в AuthController). */
+
     @Transactional
     public AppUser registerUser(String username, String rawPassword) {
 // простая обёртка: всегда Role.USER и enabled=true
@@ -107,16 +100,8 @@ public class UserService {
     }
 
 
-// -----------------
-// UPDATE
-// -----------------
 
 
-    /**
-     * Обновление пользователя админом.
-     * Username НЕ меняем (у вас в форме это поле выводится, но менять обычно запрещают).
-     * Password меняем только если пришёл непустой.
-     */
     @Transactional
     public AppUser updateByAdmin(Long id, String rawPassword, Role role, boolean enabled) {
         AppUser user = findById(id);
@@ -139,34 +124,17 @@ public class UserService {
     }
 
 
-// -----------------
-// DELETE (важно для FK)
-// -----------------
 
-
-    /**
-     * Удаляет пользователя и его данные, чтобы не было ошибки FK (SQLState 23503).
-     * Порядок критичен.
-     */
     @Transactional
     public void delete(Long userId) {
         if (userId == null) return;
         if (!userRepo.existsById(userId)) return;
 
 
-// 1) transactions
+
         txRepo.deleteAllForUser(userId);
-
-
-// 2) subcategories
         subRepo.deleteAllForUser(userId);
-
-
-// 3) categories
         catRepo.deleteAllForUser(userId);
-
-
-// 4) user
         userRepo.deleteById(userId);
     }
 }

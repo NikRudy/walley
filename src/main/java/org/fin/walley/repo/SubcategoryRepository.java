@@ -21,9 +21,6 @@ public interface SubcategoryRepository extends JpaRepository<Subcategory, Long> 
     @Query("delete from Subcategory s where s.category.user.id = :userId")
     void deleteAllForUser(@Param("userId") Long userId);
 
-    /**
-     * Удалить все подкатегории конкретной категории пользователя.
-     */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
            delete from Subcategory s
